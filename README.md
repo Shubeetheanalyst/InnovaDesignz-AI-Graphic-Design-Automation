@@ -4,6 +4,9 @@
 
 An intelligent **n8n automation workflow** that transforms graphic design topics into production-ready social media content, leveraging Google Gemini AI, Telegram for real-time collaboration, and cloud-native image generation with full version control and regeneration capabilities.
 
+<img width="1386" height="627" alt="Innova Flow" src="https://github.com/user-attachments/assets/5604e839-f7fc-4081-afa6-2c8dabda1210" />
+
+
 ---
 
 ## 📋 Table of Contents
