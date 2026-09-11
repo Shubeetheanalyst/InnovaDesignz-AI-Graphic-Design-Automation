@@ -1,0 +1,825 @@
+{
+  "name": "Innova_Designz_Graphic_Designer_V2",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 3
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -2448,
+        1168
+      ],
+      "id": "f4ed022e-ccfc-4ccb-967e-95038c71b6d0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8516ff56-b5b1-410e-8032-cd814b6ebd6d",
+              "name": "Topic",
+              "value": "Designing Seamless High-Converting E-Commerce Mobile App UI/UX & Digital Storefronts",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -2256,
+        1168
+      ],
+      "id": "b171ee08-3411-4f9e-a3eb-67abf69e62f0",
+      "name": "Initialize Sample Topics"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an elite Creative Director and Prompt Engineer for InnovaDesignz.\n\nYour goal is to turn an input topic into a Social Media Ad Copy and a Hyper-Detailed Image Generation Prompt.\n\n--- VISUAL BRANDING RULES FOR IMAGE PROMPT ---\nThe 'image_prompt' MUST describe a full agency ad graphic with these specific elements:\n1. HUMAN ELEMENT: A realistic modern professional strategist or designer interacting with a sleek holographic UI/UX dashboard, floating glass app interfaces, or 3D visual assets.\n2. OVERLAY TYPOGRAPHY: Must feature bold editorial typography at the top stating the main headline in sharp white/lime green text.\n3. BRAND COLOR PALETTE: Deep black background (#050505), electric neon green (#00FF66) lighting/glows, and dark glass reflections.\n4. BRANDING: InnovaDesignz agency layout with floating 3D elements, premium lighting, Octane render 8k, modern aesthetic.\n\n--- OUTPUT FORMAT ---\nReturn ONLY a valid JSON object without markdown wrappers:\n{\n  \"headline\": \"BOLD HEADLINE HERE\",\n  \"caption\": \"Short engaging post caption with CTA...\",\n  \"hashtags\": \"#InnovaDesignz #UIUX #DesignAgency #DigitalBranding\",\n  \"image_prompt\": \"Hyper-realistic social media ad graphic for InnovaDesignz agency. Pitch black background with electric neon green (#00FF66) volumetric lighting. In the center, a focused male designer sitting at a high-tech glass desk operating a glowing floating 3D mobile app UI card. Large bold white/green editorial typography at the top reading '[HEADLINE]'. Modern layout, dynamic lighting, octane render, 8k quality.\"\n}",
+              "role": "model"
+            },
+            {
+              "content": "=Topic: {{ $json.Topic }}\nUser Edit Notes (If Regenerating): {{ $json.message.text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -1808,
+        1136
+      ],
+      "id": "350d3c31-6248-43ae-a801-fe1a3447b434",
+      "name": "Generate Post Content (Gemini Text)",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Clean raw JSON response from Gemini\nconst rawText = $input.first().json.content.parts[0].text;\nconst cleanText = rawText.replace(/```json|```/g, '').trim();\nconst parsedData = JSON.parse(cleanText);\n\n// Get topic from Set Node\nconst topic = $node[\"Initialize Sample Topics\"].json.Topic;\n\nreturn {\n  json: {\n    topic: topic,\n    headline: parsedData.headline,\n    caption: parsedData.caption,\n    hashtags: parsedData.hashtags,\n    image_prompt: parsedData.image_prompt,\n    full_post_text: `${parsedData.headline}\\n\\n${parsedData.caption}\\n\\n${parsedData.hashtags}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1504,
+        1136
+      ],
+      "id": "8e8d1012-0f06-40db-b7cc-a093eeb1d226",
+      "name": "Parse AI Output"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite-image",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3.1-flash-lite-image"
+        },
+        "prompt": "={\n  \"instances\": [\n    {\n      \"prompt\": \" {{ $json.image_prompt }} \"\n    }\n  ],\n  \"parameters\": {\n    \"sampleCount\": 1,\n    \"aspectRatio\": \"1:1\"\n  }\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        -1312,
+        1136
+      ],
+      "id": "513e22aa-8cf8-42be-ae2c-c6e3014c995c",
+      "name": "Generate Image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendPhoto",
+        "chatId": "6684210894",
+        "file": "={{ $json.image }}",
+        "replyMarkup": "=inlineKeyboard",
+        "forceReply": {},
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "✅ Approve & Publish",
+                    "additionalFields": {
+                      "callback_data": "approve"
+                    }
+                  },
+                  {
+                    "text": "🔄 Regenerate",
+                    "additionalFields": {
+                      "callback_data": "regenerate"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "replyKeyboardOptions": {},
+        "replyKeyboardRemove": {},
+        "additionalFields": {
+          "caption": "={{ $json.caption }}"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -2384,
+        1824
+      ],
+      "id": "b9fc2661-50cd-4b8c-b37d-157c6148d4d8",
+      "name": "Send a photo message",
+      "webhookId": "540439bd-b5dc-4f43-adfc-f3e2a131136a",
+      "credentials": {
+        "telegramApi": {
+          "id": "HEkjMAEhYtOqoPXW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "updates": [
+          "callback_query",
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -2176,
+        1680
+      ],
+      "id": "92aabe33-ff22-49a1-8215-1a327823545d",
+      "name": "Telegram Trigger",
+      "webhookId": "01874197-4aa7-4913-b75f-a7e12b1ff967",
+      "credentials": {
+        "telegramApi": {
+          "id": "HEkjMAEhYtOqoPXW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6684210894",
+        "text": "Thank you for approving the post. Once it has been uploaded to the platform, I’ll let you know.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1376,
+        1520
+      ],
+      "id": "830f2d57-be94-409a-aeb0-5e23ce8eeb3b",
+      "name": "Send a text message",
+      "webhookId": "1f9354b5-0c4d-4900-8f67-d6789b86d8d8",
+      "notesInFlow": false,
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "HEkjMAEhYtOqoPXW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6684210894",
+        "text": "={{ $json.text }}",
+        "replyMarkup": "forceReply",
+        "forceReply": {},
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1328,
+        1696
+      ],
+      "id": "077d4d6d-e705-41d3-a452-584d947a7494",
+      "name": "Send instruction message",
+      "webhookId": "1f9354b5-0c4d-4900-8f67-d6789b86d8d8",
+      "notesInFlow": false,
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "credentials": {
+        "telegramApi": {
+          "id": "HEkjMAEhYtOqoPXW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "67cdc219-cd0b-454a-a39c-7d2830400ef5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "85cc50ae-a23e-4d7b-a9a2-73133a9d69a0",
+                    "leftValue": "={{ $json.callback_query.data }}",
+                    "rightValue": "regenerate",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Regenerate"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "80f0d027-4025-4386-bf39-e58159773445",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "User Feedback"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1968,
+        1680
+      ],
+      "id": "6df53182-5499-4d78-a58a-713fba707bee",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Embed topic / full post text / image url into the caption itself\n// (as a hidden #DATA# JSON block) so the Approve/Regenerate/Feedback\n// steps -- which run in a LATER, separate execution -- can recover it\n// straight from the Telegram message, with no external storage needed.\nconst parsed = $('Parse AI Output').first().json;\nconst cloudinary = $input.first().json;\n\nconst payload = {\n  t: parsed.topic,\n  i: cloudinary.secure_url\n};\n\nconst caption =\n  `🎨 *NEW POST FOR APPROVAL*\\n\\n` +\n  `*Headline:* ${parsed.headline}\\n\\n` +\n  `*Caption:* ${parsed.caption}\\n\\n` +\n  `*Hashtags:* ${parsed.hashtags}\\n\\n` +\n  `#DATA#${JSON.stringify(payload)}`;\n\n// Keep the binary image data flowing through to the photo-send node.\nreturn [{\n  json: { caption, image: cloudinary.secure_url },\n  binary: $input.first().binary\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2384,
+        1584
+      ],
+      "id": "389d7221-f192-405a-b574-659ccdc11a68",
+      "name": "Build Photo Caption"
+    },
+    {
+      "parameters": {
+        "operation": "uploadFile",
+        "additionalFieldsFile": {}
+      },
+      "type": "n8n-nodes-cloudinary.cloudinary",
+      "typeVersion": 2,
+      "position": [
+        -928,
+        1488
+      ],
+      "id": "dcef9442-d569-4eab-ae91-7a2a51a11c86",
+      "name": "Upload an asset from file data",
+      "credentials": {
+        "cloudinaryApi": {
+          "id": "noJbz0MtnoyxU5ij",
+          "name": "Cloudinary account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer C3V2E52Q90sjX1Savi1GtGmuqyX_wFLUVHv2pALsV8Y"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"query GetOrganizations { account { organizations { id name } } }\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -688,
+        1536
+      ],
+      "id": "bdbd1963-6fe9-46f2-85e4-b307d40fdd8a",
+      "name": "Get Organization ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer C3V2E52Q90sjX1Savi1GtGmuqyX_wFLUVHv2pALsV8Y"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "=query GetChannels {\n  channels(input: {\n    organizationId: \"{{ $json.data.account.organizations[0].id }}\"\n  }) {\n    id\n    name\n    displayName\n    service\n    avatar\n    isQueuePaused\n  }\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -480,
+        1536
+      ],
+      "id": "f9024dce-e4fd-438f-9e68-2e491a642cd6",
+      "name": "Get Channel ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com/graphql",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer C3V2E52Q90sjX1Savi1GtGmuqyX_wFLUVHv2pALsV8Y"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"mutation CreateFirstPost($input: CreatePostInput!) { createPost(input: $input) { ... on PostActionSuccess { post { id text dueAt } } ... on MutationError { message } } }\",\n  \"variables\": {\n    \"input\": {\n      \"text\": {{ \n        JSON.stringify(\n          $('Telegram Trigger').item.json.callback_query.message.caption\n            .match(/\\*Caption:\\*\\s*(.*?)\\s*\\*Hashtags:\\*\\s*(.*?)\\s*#DATA#/s)\n            .slice(1, 3)\n            .join('\\n')\n        )\n      }},\n      \"channelId\": \"{{ $json.data.channels[0].id }}\",\n      \"schedulingType\": \"automatic\",\n      \"mode\": \"shareNow\",\n      \"assets\": [\n        {\n          \"image\": {\n            \"url\": {{ \n              JSON.stringify(\n                JSON.parse(\n                  $('Telegram Trigger').item.json.callback_query.message.caption\n                    .split('#DATA#')[1]\n                ).i\n              )\n            }}\n          }\n        }\n      ],\n      \"metadata\": {\n        \"facebook\": {\n          \"type\": \"post\"\n        }\n      }\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -288,
+        1296
+      ],
+      "id": "66e88776-328d-401b-9a19-f8f98339fcbd",
+      "name": "Make POST"
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = ($json.callback_query && $json.callback_query.message && $json.callback_query.message.caption) || '';\nconst match = src.match(/#DATA#(\\{[\\s\\S]*\\})/);\nconst data = match ? JSON.parse(match[1]) : {};\n\nconst headline = (src.match(/\\*Headline:\\*\\s*([\\s\\S]*?)\\n\\n/) || [])[1] || '';\nconst caption  = (src.match(/\\*Caption:\\*\\s*([\\s\\S]*?)\\n\\n/) || [])[1] || '';\nconst hashtags = (src.match(/\\*Hashtags:\\*\\s*([\\s\\S]*?)\\n\\n#DATA#/) || [])[1] || '';\n\nreturn [{\n  json: {\n    ...$json,\n    topic: data.t,\n    full_post_text: `${headline}\\n\\n${caption}\\n\\n${hashtags}`,\n    image: data.i\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -752,
+        1296
+      ],
+      "id": "02de1855-3f04-49d7-aed6-addd260f5954",
+      "name": "Load Pending Post"
+    },
+    {
+      "parameters": {
+        "jsCode": "// The user replied directly to \"Send instruction message\" (forceReply),\n// so Telegram gives us that message back in reply_to_message.text,\n// including the #DATA# block we embedded in it.\nconst replyText = ($json.message && $json.message.reply_to_message && $json.message.reply_to_message.text) || '';\nconst match = replyText.match(/#DATA#(\\{[\\s\\S]*\\})/);\nconst data = match ? JSON.parse(match[1]) : {};\n\nreturn [{\n  json: {\n    Topic: data.t || '',\n    message: $json.message\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1552,
+        1888
+      ],
+      "id": "60d7faba-88f0-4f95-bca3-60540bbea666",
+      "name": "Prepare Regeneration"
+    },
+    {
+      "parameters": {
+        "chatId": "6684210894",
+        "text": "✅ Your post has been published successfully!",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -112,
+        1520
+      ],
+      "id": "717e1a6c-16ae-43e1-ad35-55dc689d4b46",
+      "name": "Send Post Success Message",
+      "webhookId": "a82e0f69-7ec7-4b52-89c8-90441ac9a558",
+      "credentials": {
+        "telegramApi": {
+          "id": "HEkjMAEhYtOqoPXW",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pull #DATA# from the photo caption (Regenerate button's message)\n// and re-embed it into the instruction message we're about to send,\n// so the user's reply carries it through reply_to_message.\nconst src = ($json.callback_query && $json.callback_query.message && $json.callback_query.message.caption) || '';\nconst match = src.match(/#DATA#(\\{[\\s\\S]*\\})/);\nconst blob = match ? match[1] : '{}';\n\nconst text = `Kindly provide the instructions outlining the changes you would like to make.\\n\\n#DATA#${blob}`;\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1552,
+        1696
+      ],
+      "id": "9630a367-431b-49af-a848-af7e2e2f0b09",
+      "name": "Build Regenerate Prompt"
+    },
+    {
+      "parameters": {
+        "content": "## 🎯 WORKFLOW TRIGGER & TOPIC INIT\nStep 1️⃣ EVERY 3 MINUTES └─ Schedule Trigger fires └─ Initialize Sample Topics loads design topic\n\nStep 2️⃣ READY FOR AI └─ Topic passes to Gemini AI └─ Waiting for content generation",
+        "height": 368,
+        "width": 400,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2480,
+        944
+      ],
+      "typeVersion": 1,
+      "id": "6791591f-a31d-449b-93ab-aadfc2efaa5e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## 🤖 GEMINI AI + IMAGE GENERATION\nStep 3️⃣ TEXT GENERATION (Gemini) └─ Creates: Headlines ✓ └─ Creates: Captions ✓ └─ Creates: Hashtags ✓ └─ Creates: Image Prompt ✓\n\nStep 4️⃣ PARSING └─ Cleans JSON output └─ Validates schema\n\nStep 5️⃣ IMAGE GENERATION (Gemini) └─ Converts prompt → Visual └─ Hyper-realistic graphic",
+        "height": 384,
+        "width": 752,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1888,
+        928
+      ],
+      "typeVersion": 1,
+      "id": "2107734f-ade5-4fcb-aeb8-cc494639acb8",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## 💬 TELEGRAM APPROVAL & ROUTING    \n### Step 6️⃣ SEND PREVIEW TO TEAM └─ Photo message: Generated graphic └─ Text message: Copy + Captions └─ Instruction message: \"Approve or Edit?\"\n\n### Step 7️⃣ WAIT FOR RESPONSE (Telegram Trigger) └─ Team approves → Continue to publishing └─ Team requests edit → Route to regeneration\n\n### Step 8️⃣ CONDITIONAL ROUTING (Switch Node) └─ If \"approved\" → Go to publishing └─ If \"regenerate\" → Go to edit workflow",
+        "height": 800,
+        "width": 1344,
+        "color": "#191A1A"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2464,
+        1328
+      ],
+      "typeVersion": 1,
+      "id": "895ad84d-ce0d-42e9-9af2-6c3400ecb3a7",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# 🚀 CLOUDINARY + API PUBLISHING\n\n## Step 9️⃣ PREPARE ASSETS └─ Build Photo Caption (code node) └─ Format for social platforms\n\n## Step 🔟 UPLOAD TO CDN └─ Upload to Cloudinary └─ Get public URL └─ Global distribution ready\n\n## Step 1️⃣1️⃣ API PUBLISHING └─ Get Organization ID (API call) └─ Get Channel ID (API call) └─ Make P##OST request (publish) └─ Post now live on platform!\n\n## Step 1️⃣2️⃣ SUCCESS NOTIFICATION └─ Send confirmation to Telegram └─ Archive post metadata └─ Ready for next topic",
+        "height": 720,
+        "width": 1280,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1040,
+        992
+      ],
+      "typeVersion": 1,
+      "id": "52c70747-fc10-4f0c-82e0-74932de3767a",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "# InnovaDesignz AI-Powered Graphic Design Automation Workflow",
+        "height": 80,
+        "width": 2720,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -2480,
+        832
+      ],
+      "typeVersion": 1,
+      "id": "4cca52aa-7240-4d1f-8716-75143902ca09",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Initialize Sample Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Sample Topics": {
+      "main": [
+        [
+          {
+            "node": "Generate Post Content (Gemini Text)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Post Content (Gemini Text)": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Output": {
+      "main": [
+        [
+          {
+            "node": "Generate Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image": {
+      "main": [
+        [
+          {
+            "node": "Upload an asset from file data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Regenerate Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Regeneration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Load Pending Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload an asset from file data": {
+      "main": [
+        [
+          {
+            "node": "Build Photo Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Organization ID": {
+      "main": [
+        [
+          {
+            "node": "Get Channel ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Channel ID": {
+      "main": [
+        [
+          {
+            "node": "Make POST",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load Pending Post": {
+      "main": [
+        [
+          {
+            "node": "Get Organization ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make POST": {
+      "main": [
+        [
+          {
+            "node": "Send Post Success Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Regeneration": {
+      "main": [
+        [
+          {
+            "node": "Initialize Sample Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Regenerate Prompt": {
+      "main": [
+        [
+          {
+            "node": "Send instruction message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Photo Caption": {
+      "main": [
+        [
+          {
+            "node": "Send a photo message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2a5db259-8f10-44ca-8336-8fbc947dc93e",
+  "meta": {
+    "instanceId": "a26834876dc969d89ace291f043e6b5cb9404f473bbbc443ea75987855f9b3d2"
+  },
+  "nodeGroups": [],
+  "id": "HC3orJVcV8dNEjEc",
+  "tags": []
+}
